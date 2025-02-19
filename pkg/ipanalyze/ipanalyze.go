@@ -6,11 +6,11 @@ import (
 	"os"
 	"path"
 
-	"github.com/asdfzxcvbn/ipanalyze/internal/utils"
+	"github.com/asdfzxcvbn/ipanalyze/internal/ipas"
 	"howett.net/plist"
 )
 
-// takes a path to a .ipa file and returns info.
+// AnalyzeIPA takes a path to a .ipa file and returns info.
 func AnalyzeIPA(ipa string) (*IPAInfo, error) {
 	o, err := zip.OpenReader(ipa)
 	if err != nil {
@@ -18,7 +18,7 @@ func AnalyzeIPA(ipa string) (*IPAInfo, error) {
 	}
 	defer o.Close()
 
-	plistFile, err := utils.FindPlist(o.File)
+	plistFile, err := ipas.FindPlist(o.File)
 	if err != nil {
 		return nil, err
 	}
@@ -34,15 +34,13 @@ func AnalyzeIPA(ipa string) (*IPAInfo, error) {
 		return nil, err
 	}
 
+	// can't use decoder, no Seek method
 	var info IPAInfo
-	if _, err = plist.Unmarshal(plistContents, &info); err != nil {
-		return nil, err
-	}
-
-	return &info, nil
+	_, err = plist.Unmarshal(plistContents, &info)
+	return &info, err
 }
 
-// takes a path to a .app folder and returns info.
+// AnalyzeApp takes a path to a .app directory and returns info.
 func AnalyzeApp(app string) (*IPAInfo, error) {
 	plistPath := path.Join(app, "Info.plist")
 
@@ -50,17 +48,9 @@ func AnalyzeApp(app string) (*IPAInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close() // oh well, wont check for error
-
-	contents, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
+	defer file.Close()
 
 	var info IPAInfo
-	if _, err := plist.Unmarshal(contents, &info); err != nil {
-		return nil, err
-	}
-
-	return &info, nil
+	err = plist.NewDecoder(file).Decode(&info)
+	return &info, err
 }

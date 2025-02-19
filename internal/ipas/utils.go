@@ -1,4 +1,4 @@
-package utils
+package ipas
 
 import (
 	"archive/zip"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// finds the name of the Info.plist in an ipa file.
+// FindPlist finds the name of the Info.plist in an ipa file.
 func FindPlist(files []*zip.File) (*zip.File, error) {
 	for _, file := range files {
 		if strings.HasSuffix(file.Name, ".app/Info.plist") {
